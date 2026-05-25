@@ -12,10 +12,10 @@ COMMENT=	FreeNAS UI
 
 EXTRACT_ONLY=
 
-FETCH_DEPENDS=	npm2>0:${PORTSDIR}/www/npm2 \
+FETCH_DEPENDS=	npm>0:${PORTSDIR}/www/npm \
 		gmake:${PORTSDIR}/devel/gmake \
 		git>0:${PORTSDIR}/devel/git
-RUN_DEPENDS=	npm2>0:${PORTSDIR}/www/npm2
+RUN_DEPENDS=	npm>0:${PORTSDIR}/www/npm
 BUILD_DEPENDS=	rsync>0:${PORTSDIR}/net/rsync
 
 NO_BUILD=	yes
@@ -26,7 +26,35 @@ checksum:
 
 fetch:
 	${MKDIR} ${WRKDIR}
-	(cd ${WRKSRC} && ${LOCALBASE}/bin/npm cache clean && ${LOCALBASE}/bin/npm install && ${LOCALBASE}/bin/npm run-script clean && ${LOCALBASE}/bin/npm run-script build)
+	(cd ${WRKSRC} && ${LOCALBASE}/bin/npm install)
+	(cd ${WRKSRC} && ${LOCALBASE}/bin/npm install postcss postcss-cssnext postcss-import)
+	(cd ${WRKSRC} && ./node_modules/.bin/tsc || true)
+	(cd ${WRKSRC} && ${LOCALBASE}/bin/node -e '\
+		var postcss = require("postcss"); \
+		var cssnext = require("postcss-cssnext"); \
+		var postcssImport = require("postcss-import"); \
+		var fs = require("fs"); \
+		var path = require("path"); \
+		var execSync = require("child_process").execSync; \
+		var files = execSync("find ui blue-shark/ui -name \"_*.css\" -not -path \"*/node_modules/*\"", {encoding: "utf8"}).trim().split("\\n"); \
+		var configPath = path.resolve("./blue-shark/ui/_config.css"); \
+		var processor = postcss([postcssImport(), cssnext({warnForDuplicates: false, features: {rem: false}})]); \
+		Promise.all(files.map(function(file) { \
+			var dir = path.dirname(file); \
+			var outPath = path.join(dir, path.basename(file).substring(1)); \
+			var css = fs.readFileSync(file, "utf8"); \
+			var input = "@import \x27" + path.relative(dir, configPath).replace(/\\\\/g, "/") + "\x27;\\n" + css; \
+			return processor.process(input, {from: path.resolve(file), to: path.resolve(outPath)}).then(function(r) { \
+				fs.writeFileSync(outPath, r.css); \
+			}).catch(function() { fs.writeFileSync(outPath, css); }); \
+		})).then(function() { console.log("CSS done"); }); \
+	')
+	(cd ${WRKSRC} && mkdir -p bin/vendors/uuid/lib && \
+		cp node_modules/uuid/index.js bin/vendors/uuid/index.js && \
+		cp node_modules/uuid/v1.js bin/vendors/uuid/v1.js && \
+		cp node_modules/uuid/v4.js bin/vendors/uuid/v4.js && \
+		cp node_modules/uuid/lib/bytesToUuid.js bin/vendors/uuid/lib/bytesToUuid.js && \
+		cp node_modules/uuid/lib/rng-browser.js bin/vendors/uuid/lib/rng.js)
 	(cd ${WRKSRC}/serial-console-app && ${LOCALBASE}/bin/npm install)
 
 extract:
