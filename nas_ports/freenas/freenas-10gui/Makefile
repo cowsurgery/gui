@@ -26,8 +26,8 @@ checksum:
 
 fetch:
 	${MKDIR} ${WRKDIR}
-	(cd ${WRKSRC} && ${LOCALBASE}/bin/npm install)
-	(cd ${WRKSRC} && ${LOCALBASE}/bin/npm install postcss postcss-cssnext postcss-import)
+	(cd ${WRKSRC} && ${LOCALBASE}/bin/npm install --production --legacy-bundling)
+	(cd ${WRKSRC} && ${LOCALBASE}/bin/npm install typescript@2.2.2 postcss postcss-cssnext postcss-import --legacy-bundling)
 	(cd ${WRKSRC} && ./node_modules/.bin/tsc || true)
 	(cd ${WRKSRC} && ${LOCALBASE}/bin/node -e '\
 		var postcss = require("postcss"); \
