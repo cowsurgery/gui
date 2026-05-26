@@ -26,7 +26,10 @@ checksum:
 
 fetch:
 	${MKDIR} ${WRKDIR}
-	(cd ${WRKSRC} && ${LOCALBASE}/bin/npm install --production --legacy-bundling)
+	(cd ${WRKSRC} && ${LOCALBASE}/bin/npm install svg-typewriter@1.0.2 --legacy-bundling --ignore-scripts && \
+		cd node_modules/svg-typewriter && \
+		${LOCALBASE}/bin/node -e "var p=require('./package.json'); delete p.dependencies['@types/d3']; require('fs').writeFileSync('./package.json', JSON.stringify(p,null,2))" && \
+		cd ${WRKSRC} && ${LOCALBASE}/bin/npm install --production --legacy-bundling)
 	(cd ${WRKSRC} && ${LOCALBASE}/bin/npm install typescript@2.2.2 postcss postcss-cssnext postcss-import --legacy-bundling)
 	(cd ${WRKSRC} && ./node_modules/.bin/tsc || true)
 	(cd ${WRKSRC} && ${LOCALBASE}/bin/node -e '\
