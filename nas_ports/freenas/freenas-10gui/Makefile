@@ -27,7 +27,7 @@ extract:
 	:
 
 do-install:
-	rsync -avl --exclude '.git' --exclude 'nas_ports' --exclude 'etc' --exclude 'sbin' --exclude 'node_modules' ${WRKSRC}/ ${STAGEDIR}${PREFIX}/www/gui/
+	rsync -avl --exclude '.git' --exclude 'nas_ports' --exclude 'etc' --exclude 'sbin' ${WRKSRC}/ ${STAGEDIR}${PREFIX}/www/gui/
 	mkdir -p ${STAGEDIR}${PREFIX}/www/gui/
 	(cd ${STAGEDIR}${PREFIX}/www/gui; ${FIND} . -type f \
 		| ${SED} -e 's,^\./,,g' \
